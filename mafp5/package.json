@@ -9,6 +9,14 @@
     "start": "next start -p 4100",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "d1:migrate:local": "wrangler d1 migrations apply mafp5-db --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply mafp5-db --remote",
+    "d1:seed:gen": "bash scripts/gen-d1-seed.sh",
+    "d1:seed:local": "wrangler d1 execute mafp5-db --local --file=prisma/d1-seed.sql",
+    "d1:seed:remote": "wrangler d1 execute mafp5-db --remote --file=prisma/d1-seed.sql",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
@@ -20,6 +28,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@prisma/adapter-d1": "^6.19.3",
     "@prisma/client": "^6.2.1",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.3",
@@ -62,6 +72,7 @@
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",
     "tw-animate-css": "^1.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "wrangler": "^4.110.0"
   }
 }

@@ -1,0 +1,6 @@
+# Copy to .dev.vars for local Cloudflare Workers preview (opennextjs-cloudflare
+# preview / wrangler dev). These become process.env at runtime on Workers.
+# In production set them as Worker secrets: `wrangler secret put AUTH_SECRET`.
+
+# Session signing secret (JWT). Generate with: openssl rand -base64 48
+AUTH_SECRET="ganti-dengan-secret-acak-yang-panjang"
