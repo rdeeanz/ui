@@ -6,6 +6,7 @@ import { Anchor, Menu } from "lucide-react"
 
 import { SidebarNav } from "@/components/layout/sidebar-nav"
 import { UserMenu } from "@/components/layout/user-menu"
+import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
@@ -28,8 +29,11 @@ function SidebarBody({ role, onNavigate }: { role: Role; onNavigate?: () => void
       <div className="flex-1 overflow-y-auto py-3">
         <SidebarNav items={items} onNavigate={onNavigate} />
       </div>
-      <div className="text-muted-foreground border-t p-3 text-[11px]">
-        PT Pelabuhan Indonesia (Persero)
+      <div className="flex items-center justify-between gap-2 border-t p-3">
+        <span className="text-muted-foreground text-[11px]">
+          PT Pelabuhan Indonesia (Persero)
+        </span>
+        <ModeToggle />
       </div>
     </div>
   )

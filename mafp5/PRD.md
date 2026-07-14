@@ -168,6 +168,6 @@ Gunakan `Badge` dengan token semantik: Availability ≥ 90% (baik), 70–89% (pe
 
 ## 13. Pertanyaan Terbuka
 
-1. Apakah availability perlu dibobot berdasarkan luas/nilai aset, atau tetap rata-rata sederhana?
-2. Frekuensi periode resmi: bulanan, semesteran, atau keduanya (data sumber memuat "MEI" dan "SEMESTER PERTAMA")?
-3. Apakah perlu dukungan multi-regional penuh di v1 atau fokus Regional 2 dahulu?
+1. Apakah availability perlu dibobot berdasarkan luas/nilai aset, atau tetap rata-rata sederhana? Jawab: tetap rata-rata sederhana
+2. Frekuensi periode resmi: bulanan, semesteran, atau keduanya (data sumber memuat "MEI" dan "SEMESTER PERTAMA")? Jawab: bulanan
+3. Apakah perlu dukungan multi-regional penuh di v1 atau fokus Regional 2 dahulu? Jawab: ya, perlu dukungan multi-regional penuh di v1
