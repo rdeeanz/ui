@@ -1,0 +1,202 @@
+// Monitoring Availability Fasilitas Sipil - PT Pelabuhan Indonesia (Persero)
+//
+// Dev uses SQLite for zero-config runnability. For production, switch the
+// datasource provider to "postgresql" and point DATABASE_URL to your Postgres
+// instance (schema is provider-agnostic; no SQLite-only features are used).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PETUGAS
+  PIC_REGIONAL
+  MANAJEMEN
+}
+
+enum StatusInspeksi {
+  DRAFT
+  DIAJUKAN
+  DIVERIFIKASI
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  nama         String
+  passwordHash String
+  role         Role      @default(PETUGAS)
+  // Petugas / PIC scoped to a pelabuhan or regional
+  regionalId   String?
+  regional     Regional? @relation(fields: [regionalId], references: [id])
+  pelabuhanId  String?
+  pelabuhan    Pelabuhan? @relation(fields: [pelabuhanId], references: [id])
+  aktif        Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs    AuditLog[]
+  inspeksiDibuat Inspeksi[] @relation("InspeksiPembuat")
+  inspeksiDiverifikasi Inspeksi[] @relation("InspeksiVerifikator")
+}
+
+model Regional {
+  id        String      @id @default(cuid())
+  kode      String      @unique
+  nama      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  pelabuhan Pelabuhan[]
+  users     User[]
+}
+
+model Pelabuhan {
+  id              String    @id @default(cuid())
+  nama            String
+  operatorDefault String?
+  regionalId      String
+  regional        Regional  @relation(fields: [regionalId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  fasilitas       Fasilitas[]
+  inspeksi        Inspeksi[]
+  users           User[]
+
+  @@unique([regionalId, nama])
+  @@index([regionalId])
+}
+
+// Master kategori fasilitas (DERMAGA, LAPANGAN PENUMPUKAN, GUDANG, ...)
+model KategoriFasilitas {
+  id        String      @id @default(cuid())
+  nama      String      @unique
+  urutan    Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  fasilitas Fasilitas[]
+}
+
+model Fasilitas {
+  id          String            @id @default(cuid())
+  nama        String
+  konstruksi  String?
+  operator    String?
+  pelabuhanId String
+  pelabuhan   Pelabuhan         @relation(fields: [pelabuhanId], references: [id], onDelete: Cascade)
+  kategoriId  String
+  kategori    KategoriFasilitas @relation(fields: [kategoriId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  objek       ObjekFasilitas[]
+  catatan     CatatanObjek[]
+
+  @@index([pelabuhanId])
+  @@index([kategoriId])
+}
+
+// Master objek/komponen dari sebuah fasilitas (Pelat Lantai, Fender, Bolder, ...)
+model ObjekFasilitas {
+  id          String    @id @default(cuid())
+  nama        String
+  satuan      String    @default("unit") // unit | m | m2
+  panjang     Float?
+  lebar       Float?
+  luas        Float?
+  jumlah      Float?
+  fasilitasId String
+  fasilitas   Fasilitas @relation(fields: [fasilitasId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  catatan     CatatanObjek[]
+
+  @@index([fasilitasId])
+}
+
+// Periode monitoring (bulan + tahun)
+model Periode {
+  id        String   @id @default(cuid())
+  bulan     String // MEI, JUNI, SEMESTER PERTAMA, ...
+  tahun     Int
+  urutan    Int      @default(0) // untuk pengurutan kronologis
+  createdAt DateTime @default(now())
+
+  inspeksi  Inspeksi[]
+  catatan   CatatanObjek[]
+
+  @@unique([bulan, tahun])
+}
+
+// Satu sesi inspeksi = pelabuhan x periode
+model Inspeksi {
+  id            String         @id @default(cuid())
+  pelabuhanId   String
+  pelabuhan     Pelabuhan      @relation(fields: [pelabuhanId], references: [id], onDelete: Cascade)
+  periodeId     String
+  periode       Periode        @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+  status        StatusInspeksi @default(DRAFT)
+  pembuatId     String?
+  pembuat       User?          @relation("InspeksiPembuat", fields: [pembuatId], references: [id])
+  verifikatorId String?
+  verifikator   User?          @relation("InspeksiVerifikator", fields: [verifikatorId], references: [id])
+  diverifikasiAt DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  catatan       CatatanObjek[]
+
+  @@unique([pelabuhanId, periodeId])
+  @@index([periodeId])
+}
+
+// Catatan kondisi sebuah objek pada satu periode (fakta yang diukur)
+model CatatanObjek {
+  id           String         @id @default(cuid())
+  inspeksiId   String
+  inspeksi     Inspeksi       @relation(fields: [inspeksiId], references: [id], onDelete: Cascade)
+  objekId      String
+  objek        ObjekFasilitas @relation(fields: [objekId], references: [id], onDelete: Cascade)
+  fasilitasId  String
+  fasilitas    Fasilitas      @relation(fields: [fasilitasId], references: [id], onDelete: Cascade)
+  periodeId    String
+  periode      Periode        @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  tersedia     Float          @default(0)
+  rusakRingan  Float          @default(0)
+  rusakSedang  Float          @default(0)
+  rusakBerat   Float          @default(0)
+  siapPakai    Float          @default(0)
+  keterangan   String?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([inspeksiId, objekId])
+  @@index([objekId])
+  @@index([periodeId])
+  @@index([fasilitasId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  aksi      String // CREATE | UPDATE | DELETE | LOGIN | VERIFY | IMPORT | EXPORT
+  entitas   String
+  entitasId String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entitas])
+}
