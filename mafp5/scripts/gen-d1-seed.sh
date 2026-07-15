@@ -15,8 +15,19 @@ TABLES=(Regional Pelabuhan KategoriFasilitas Fasilitas ObjekFasilitas Periode Us
   echo "PRAGMA defer_foreign_keys=true;"
 } > "$SEED"
 
+# Prisma's native SQLite driver stores DateTime as integer milliseconds, but the
+# D1 adapter (@prisma/adapter-d1) only recognizes a column as DateTime when the
+# stored value is an ISO-8601 string. A verbatim dump therefore yields integers
+# that D1 cannot convert back ("Could not convert value … to type DateTime").
+# For each table we build an explicit column list that rewrites every DATETIME
+# column to an ISO-8601 string via strftime, leaving all other columns untouched.
 for t in "${TABLES[@]}"; do
-  sqlite3 "$DB" -cmd ".mode insert \"$t\"" "SELECT * FROM \"$t\";" >> "$SEED"
+  cols=$(sqlite3 "$DB" "SELECT group_concat(
+      CASE WHEN UPPER(type) = 'DATETIME'
+        THEN 'strftime(''%Y-%m-%dT%H:%M:%f'', \"' || name || '\"/1000.0, ''unixepoch'') || ''+00:00'''
+        ELSE '\"' || name || '\"'
+      END, ', ') FROM pragma_table_info('$t');")
+  sqlite3 "$DB" -cmd ".mode insert \"$t\"" "SELECT $cols FROM \"$t\";" >> "$SEED"
 done
 
 echo "Wrote $SEED ($(grep -c '^INSERT' "$SEED") insert statements)"
