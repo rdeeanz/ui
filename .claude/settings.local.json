@@ -6,7 +6,15 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(sqlite3 prisma/dev.db \".tables\")",
+      "Bash(sqlite3 prisma/dev.db \"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;\")",
+      "Bash(echo \"---exit: $?---\")",
+      "Bash(npm run *)",
+      "Read(//Users/fyi/.nvm/versions/**)",
+      "Read(//Users/fyi/.volta/tools/image/**)",
+      "Bash(fnm list *)",
+      "Bash(fnm exec *)"
     ],
     "deny": []
   },
